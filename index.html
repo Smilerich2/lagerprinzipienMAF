@@ -122,6 +122,24 @@ tr:last-child td{border-bottom:none}
 .card h2 small{display:block;font-family:var(--f-body);font-size:1rem;font-weight:600;color:var(--muted)}
 .card p{margin:0;font-size:1.05rem}
 .card .ex{background:var(--msg);border-left:5px solid var(--signal);padding:8px 10px}
+/* Kontrollfrage, Codewort, Sperre */
+.quiz{background:var(--surface);border:2px solid var(--steel);padding:12px 14px;display:grid;gap:10px}
+.quiz p{margin:0;font-size:1.1rem;font-weight:600}
+.opts{display:grid;gap:8px}
+.opt{font-family:var(--f-body);font-size:1.1rem;font-weight:600;text-align:left;padding:12px 14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:4px;cursor:pointer;min-height:52px}
+.opt.wrong{border-color:var(--danger);color:var(--danger)}
+.opt:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.fb{font-weight:600}
+.fb.bad{color:var(--danger)}
+.code{background:var(--ink);color:var(--bg);padding:14px;display:grid;gap:4px;text-align:center}
+.code small{font-size:.95rem;font-weight:600;opacity:.85}
+.code b{font-family:var(--f-display);font-size:3rem;letter-spacing:.12em;line-height:1}
+.lock{background:var(--surface);border:2px solid var(--steel);padding:16px;display:grid;gap:12px}
+.lock p{margin:0}
+.parts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.parts label{display:grid;gap:4px;font-size:.85rem;font-weight:600;color:var(--muted);min-width:0}
+.parts input{font-family:var(--f-display);font-size:1.6rem;font-weight:700;text-transform:uppercase;text-align:center;padding:8px 2px;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:4px;width:100%;min-width:0}
+.parts input:focus{outline:3px solid var(--signal);outline-offset:1px}
 @media (prefers-reduced-motion:reduce){.pallet{transition:none}}
 </style>
 
@@ -157,6 +175,19 @@ const ST={
     inText:'Sie kommt in ein freies Fach.',outText:'Die Lackiermaschine braucht Lack.'}
 };
 const ORDER=['fifo','lifo','hifo','fefo'];
+
+/* ---------- Kontrollfragen und Codewort-Teile (leicht verschleiert) ---------- */
+const QZ={
+  fifo:{q:'Welche Palette war am Ende abgelaufen?',o:['P1','P3','P4'],a:2},
+  lifo:{q:'Welche Palette stand am Ende immer noch ganz hinten an der Wand?',o:['P1','P5','P10'],a:0},
+  hifo:{q:'Welche Rollen lagen am Ende noch im Lager?',o:['A und C','D und E','B und F'],a:0},
+  fefo:{q:'Welche Palette ging in KW 34 raus?',o:['P1','P3','P4'],a:2}
+};
+const PART={fifo:'UEE=',lifo:'TEVU',hifo:'VEVO',fefo:'TEFHRVI='};   /* Teile 1–4 */
+const part=k=>atob(PART[k]);
+const FULL=()=>ORDER.map(part).join('');
+const mem={get(k){try{return localStorage.getItem('lp_'+k)}catch(e){return null}},set(k,v){try{localStorage.setItem('lp_'+k,v)}catch(e){}}};
+function codeHTML(key){const d=ST[key];return '<div class="code" id="code"><small>Dein Codewort-Teil von Station '+d.no+':</small><b>'+part(key)+'</b><small>Schreibe ihn jetzt auf deinen Laufzettel!</small></div>'}
 
 /* ---------- Glossar: einfache Sprache, immer mit Beispiel ---------- */
 const GL={
@@ -256,7 +287,7 @@ function rackHTML(key,id){const d=ST[key];let lines='';for(let i=1;i<N;i++)lines
 function viewMenu(){
   app.innerHTML='<header style="display:grid;gap:6px"><span class="eyebrow">MAF / PT – Fe · LF 07</span><h1>Lagerprinzipien</h1><p style="margin:0;color:var(--muted)">Tippe auf deine Station.</p></header>'+
   '<nav class="menu">'+ORDER.map(k=>'<a href="#'+k+'"><span class="no">'+ST[k].no+'</span><span><b>'+ST[k].m+'</b><span>'+ST[k].title+'</span></span></a>').join('')+
-  '<a href="#vergleich"><span class="no">5</span><span><b>Vergleich</b><span>Alle vier Prinzipien gleichzeitig</span></span></a></nav>';
+  '<a href="#vergleich"><span class="no">5</span><span><b>Vergleich</b><span>'+(mem.get('unlock')==='ok'?'Alle vier Prinzipien gleichzeitig':'Gesperrt: erst Station 1–4 schaffen')+'</span></span></a></nav>';
 }
 
 function viewStation(key){
@@ -267,7 +298,7 @@ function viewStation(key){
     '<div class="now"><div class="week"><small>Woche</small><span id="wk">–</span></div><div class="msg" id="msg" aria-live="polite">So sieht es am Anfang aus. Gelb umrandet = geht als Nächstes raus.</div></div>'+
     rackHTML(key,'rack')+
     '<div class="legend"><span><i style="background:var(--signal)"></i>geht als Nächstes raus</span>'+(key==='hifo'?'':'<span><i style="background:var(--danger)"></i>abgelaufen</span>')+'</div>'+
-    '<div class="controls"><button class="btn go" id="go">Nächste Woche ▶</button><button class="btn" id="again" aria-label="Von vorn">↺</button></div>'+
+    '<div class="controls" id="ctl"><button class="btn go" id="go">Nächste Woche ▶</button><button class="btn" id="again" aria-label="Von vorn">↺</button></div>'+
     '<div class="facts" id="facts"></div>'+termsHTML(key)+
     '<div class="log"><h2>Was ist passiert?</h2><ol id="log"><li class="empty">Noch nichts. Tippe auf „Nächste Woche“.</li></ol></div>';
   const $=id=>document.getElementById(id);
@@ -285,10 +316,20 @@ function viewStation(key){
     st.runWeek((lines,final)=>{$('msg').innerHTML=lines.map(l=>'<span'+(l.bad?' class="bad"':'')+'>'+l.t+'</span>').join('');
         if(final){logLines(lines.slice(shown),wk)}else{logLines(lines.slice(shown),wk);shown=lines.length}},
       ()=>{busy=false;
-        if(st.done()){$('go').disabled=true;$('go').textContent='Fertig';
-          const e=document.createElement('div');e.className='end';e.id='end';e.textContent='Ende der Animation. Bearbeite jetzt die Aufgaben auf deinem Blatt. Mit ↺ kannst du alles noch einmal ansehen.';$('log').parentNode.after(e)}
+        if(st.done()){$('go').disabled=true;$('go').textContent='Fertig';showQuiz()}
         else $('go').disabled=false});
   };
+  function showQuiz(){
+    if($('end'))return;const q=QZ[key];const box=document.createElement('div');box.id='end';box.className='quiz';
+    if(mem.get(key)==='ok'){box.className='';box.innerHTML=codeHTML(key)+'<div class="end" style="margin-top:10px">Bearbeite jetzt die Aufgaben auf deinem Blatt. Mit ↺ kannst du alles noch einmal ansehen.</div>';$('ctl').after(box);return}
+    box.innerHTML='<h2>Kontrollfrage</h2><p>'+q.q+'</p><div class="opts">'+q.o.map((o,i)=>'<button class="opt" data-i="'+i+'">'+o+'</button>').join('')+'</div><div class="fb" id="fb" aria-live="polite">Tipp: Schau im Protokoll „Was ist passiert?“ nach.</div>';
+    $('ctl').after(box);
+    box.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      if(+b.dataset.i===q.a){mem.set(key,'ok');box.className='';
+        box.innerHTML=codeHTML(key)+'<div class="end" style="margin-top:10px">Richtig! Bearbeite jetzt die Aufgaben auf deinem Blatt. Mit ↺ kannst du alles noch einmal ansehen.</div>';}
+      else{b.classList.add('wrong');b.disabled=true;$('fb').className='fb bad';$('fb').textContent='Nicht ganz. Schau im Protokoll „Was ist passiert?“ nach und versuche es noch einmal.'}
+    });
+  }
   $('again').onclick=()=>{if(busy)return;st.reset();$('go').disabled=false;$('go').textContent='Nächste Woche ▶';
     $('msg').textContent='So sieht es am Anfang aus. Gelb umrandet = geht als Nächstes raus.';
     $('log').innerHTML='<li class="empty">Noch nichts. Tippe auf „Nächste Woche“.</li>';const e=$('end');if(e)e.remove()};
@@ -302,6 +343,24 @@ function compareWeeks(){let n=0;return C_PLAN.split('').map((c,i)=>{const wk=30+
   if(c==='E'){const it=P('P'+(n+1),wk,wk+C_SHELF[n],C_PRICES[n]);n++;return{wk,ev:[{t:'in',item:it}]}}
   return{wk,ev:[{t:'out'}]}})}
 function viewCompare(){
+  if(mem.get('unlock')==='ok'){viewCompareOpen();return}
+  app.innerHTML='<a class="back" href="#">← alle Stationen</a>'+
+    '<header style="display:grid;gap:2px"><span class="eyebrow">Station 5 · Vergleich</span><h1>Gesperrt</h1></header>'+
+    '<div class="lock"><p>Station 5 öffnet sich erst, wenn du alle vier Stationen geschafft hast.</p>'+
+    '<p>Trage deine vier Codewort-Teile ein, in der Reihenfolge Station 1 bis 4. Sie stehen auf deinem Laufzettel.</p>'+
+    '<form id="lf" class="parts" autocomplete="off">'+ORDER.map((k,i)=>'<label for="c'+i+'">Station '+(i+1)+'<input id="c'+i+'" maxlength="8" autocapitalize="characters" spellcheck="false"></label>').join('')+'</form>'+
+    '<button class="btn go" id="open" type="button">Station 5 öffnen</button>'+
+    '<div class="fb" id="fb" aria-live="polite"></div></div>';
+  const $=id=>document.getElementById(id);
+  const tryOpen=()=>{const v=ORDER.map((k,i)=>$('c'+i).value.replace(/\s/g,'').toUpperCase());
+    if(v.join('')===FULL()){mem.set('unlock','ok');viewCompareOpen();return}
+    const wrong=v.map((x,i)=>x===part(ORDER[i])?null:i+1).filter(Boolean);
+    $('fb').className='fb bad';
+    $('fb').textContent=wrong.length===4?'Das stimmt noch nicht. Hast du alle vier Stationen geschafft?':'Noch nicht richtig bei Station '+wrong.join(', ')+'. Prüfe deinen Laufzettel.'};
+  $('open').onclick=tryOpen;$('lf').addEventListener('submit',e=>{e.preventDefault();tryOpen()});
+  ORDER.forEach((k,i)=>$('c'+i).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();tryOpen()}}));
+}
+function viewCompareOpen(){
   app.innerHTML='<a class="back" href="#">← alle Stationen</a>'+
     '<header style="display:grid;gap:2px"><span class="eyebrow">Station 5 · Vergleich</span><h1>Alle vier im Vergleich</h1></header>'+
     '<p style="margin:0">Gleiche Lieferungen, gleiche Wochen. Nur das Lagerprinzip ist anders.</p>'+
