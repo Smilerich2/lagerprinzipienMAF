@@ -1,0 +1,336 @@
+<title>Lagerprinzipien Stationen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: Handy zuerst, eine Station pro Ansicht. Oben Woche + Meldung, Mitte Regal, darunter EIN großer Weiter-Knopf, unten das Protokoll */
+:root{
+  --bg:#eceeeb; --surface:#ffffff; --ink:#1c2321; --muted:#5a6560; --line:#cbd1cd;
+  --steel:#2c5b7b; --beam:#d9661c; --signal:#f2b705; --danger:#c3372a; --ok:#2e7a4d;
+  --load:#4f7f9e; --load-2:#3d6884; --roll:#8e9aa3; --wood:#c49a62; --msg:#fff7d6;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#131716; --surface:#1c2220; --ink:#e7ebe8; --muted:#9aa49f; --line:#33403b;
+  --steel:#6aa0c6; --beam:#ee8a45; --signal:#f5c533; --danger:#e65d4f; --ok:#5bb27f;
+  --load:#4f86ab; --load-2:#3f7397; --roll:#7d8a93; --wood:#a9814f; --msg:#2d2a1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#131716; --surface:#1c2220; --ink:#e7ebe8; --muted:#9aa49f; --line:#33403b;
+  --steel:#6aa0c6; --beam:#ee8a45; --signal:#f5c533; --danger:#e65d4f; --ok:#5bb27f;
+  --load:#4f86ab; --load-2:#3f7397; --roll:#7d8a93; --wood:#a9814f; --msg:#2d2a1a; color-scheme:dark}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:18px;line-height:1.45}
+.wrap{max-width:640px;margin:0 auto;padding-block:14px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px}
+h1,h2{font-family:var(--f-display);font-weight:700;line-height:1.05;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.9rem,8vw,2.6rem)}
+h2{font-size:1.3rem}
+.eyebrow{font-size:.85rem;font-weight:600;color:var(--muted)}
+a{color:inherit}
+.back{font-size:.95rem;color:var(--muted)}
+
+/* Startmenü */
+.menu{display:grid;gap:10px}
+.menu a{display:flex;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);padding:14px;text-decoration:none;min-height:64px}
+.menu .no{font-family:var(--f-display);font-size:2.2rem;font-weight:700;color:var(--steel);width:1.2em;text-align:center}
+.menu b{font-family:var(--f-display);font-size:1.6rem;display:block;line-height:1}
+.menu span{color:var(--muted);font-size:.95rem}
+
+/* Anleitung */
+.howto{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.95rem;margin:0;padding:0;list-style:none;counter-reset:s}
+.howto li{counter-increment:s;display:flex;gap:6px;align-items:center}
+.howto li::before{content:counter(s);display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--bg);font-weight:700;font-size:.8rem}
+
+/* Woche + Meldung */
+.now{display:flex;gap:12px;align-items:stretch}
+.week{background:var(--ink);color:var(--bg);font-family:var(--f-display);font-weight:700;display:grid;place-items:center;padding:6px 12px;min-width:84px;text-align:center;line-height:1}
+.week small{display:block;font-size:.8rem;font-weight:600;opacity:.8}
+.week span{font-size:2rem}
+.msg{flex:1;background:var(--msg);border-left:5px solid var(--signal);padding:8px 12px;font-size:1.05rem;font-weight:500;min-height:3.2em;display:grid;align-content:center;gap:2px}
+.msg .bad{color:var(--danger);font-weight:700}
+
+/* Bühne */
+.stage{position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--line);padding:30px 34px 16px}
+.zone{position:absolute;top:7px;font-size:.78rem;font-weight:700;color:var(--muted)}
+.zone.l{left:8px}.zone.r{right:8px;text-align:right}.zone.c{left:50%;transform:translateX(-50%);white-space:nowrap}
+.rack{position:relative;height:150px;border-left:5px solid var(--steel);border-right:5px solid var(--steel)}
+.rack.wall{border-left:14px solid var(--muted)}
+.rack::before{content:"";position:absolute;left:0;right:0;bottom:-9px;height:9px;background:var(--beam)}
+.rack.flow::after{content:"";position:absolute;left:0;right:0;bottom:-9px;height:9px;background:repeating-linear-gradient(90deg,transparent 0 12px,rgba(0,0,0,.28) 12px 16px)}
+.slotline{position:absolute;top:0;bottom:0;border-left:1px dashed var(--line)}
+.pallet{position:absolute;bottom:0;width:20%;left:calc(var(--s) * 20%);transform:translateY(var(--y,0));padding:0 3px;transition:left .7s cubic-bezier(.3,.7,.3,1),transform .7s cubic-bezier(.3,.7,.3,1),opacity .5s;display:flex;flex-direction:column}
+.pallet .load{height:126px;background:var(--load);border:2px solid var(--load-2);border-bottom:none;color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:6px 4px;position:relative;text-align:center}
+.pallet.roll .load{background:var(--roll);border-color:var(--roll);border-radius:40px 40px 0 0}
+.pallet .base{height:10px;background:repeating-linear-gradient(90deg,var(--wood) 0 22%,transparent 22% 39%)}
+.pallet .id{font-family:var(--f-display);font-weight:700;font-size:1.7rem;line-height:1}
+.pallet .ln{font-size:.66rem;line-height:1.25;font-weight:600}
+.pallet .ln b{display:block;font-size:.82rem}
+.pallet.dead .load{background:var(--danger);border-color:var(--danger)}
+.pallet.dead .id::after{content:" ✕"}
+.pallet.next .load{outline:4px solid var(--signal);outline-offset:2px}
+.pallet.gone{opacity:0}
+
+/* Knöpfe */
+.controls{display:flex;gap:10px}
+.btn{font-family:var(--f-body);font-weight:700;font-size:1.15rem;padding:12px 16px;border:2px solid var(--ink);background:var(--surface);color:var(--ink);cursor:pointer;border-radius:4px;min-height:56px}
+.btn.go{flex:1;background:var(--signal);border-color:var(--signal);color:#1c2321;font-size:1.35rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,.menu a:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.88rem;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:14px;vertical-align:-2px;margin-right:6px}
+.facts{display:flex;flex-wrap:wrap;gap:10px}
+.fact{background:var(--surface);border:1px solid var(--line);padding:6px 12px;font-size:.95rem}
+.fact b{font-family:var(--f-display);font-size:1.4rem;margin-left:4px}
+.fact b.bad{color:var(--danger)}
+
+/* Protokoll */
+.log{background:var(--surface);border:1px solid var(--line);padding:10px 14px;display:grid;gap:6px}
+.log ol{margin:0;padding-left:0;list-style:none;display:grid;gap:4px}
+.log li{font-size:.95rem;border-top:1px solid var(--line);padding-top:4px}
+.log li:first-child{border-top:none;padding-top:0}
+.log li .w{font-weight:700;display:inline-block;min-width:3.6em}
+.log li.bad{color:var(--danger);font-weight:600}
+.log .empty{color:var(--muted);font-size:.95rem}
+.end{background:var(--surface);border:2px solid var(--ok);padding:10px 14px;font-weight:600}
+
+/* Vergleich */
+.mini .stage{padding:24px 30px 12px}
+.mini .rack{height:70px}
+.mini .pallet .load{height:54px;padding:3px}
+.mini .pallet .id{font-size:1rem}
+.mini .pallet .ln{display:none}
+.mrow{display:grid;gap:4px}
+.mhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.mhead b{font-family:var(--f-display);font-size:1.35rem}
+.mhead span{font-size:.9rem;color:var(--muted)}
+.mhead span.bad{color:var(--danger);font-weight:600}
+.tablebox{overflow-x:auto;border:1px solid var(--line);background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:400px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+th{font-size:.8rem;color:var(--muted);font-weight:600}
+td:first-child{font-family:var(--f-display);font-size:1.2rem;font-weight:700}
+tr:last-child td{border-bottom:none}
+/* Glossar */
+.terms{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.terms > span{font-size:.9rem;font-weight:600;color:var(--muted)}
+.term{font-family:var(--f-body);font-weight:700;font-size:1rem;padding:6px 12px;border:2px solid var(--steel);color:var(--steel);background:var(--surface);border-radius:999px;cursor:pointer;min-height:40px}
+.term::after{content:" ?";opacity:.8}
+.term:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:20;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.card{background:var(--surface);color:var(--ink);max-width:460px;width:100%;padding:18px;display:grid;gap:10px;border-top:6px solid var(--steel);border-radius:4px}
+.card h2{font-size:1.8rem}
+.card h2 small{display:block;font-family:var(--f-body);font-size:1rem;font-weight:600;color:var(--muted)}
+.card p{margin:0;font-size:1.05rem}
+.card .ex{background:var(--msg);border-left:5px solid var(--signal);padding:8px 10px}
+@media (prefers-reduced-motion:reduce){.pallet{transition:none}}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+(function(){
+const N=5, DELAY=900;
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Szenarien: exakt wie auf den Stationsblättern ---------- */
+const P=(id,wk,mhd,price)=>({id,wk,mhd,price});
+const ST={
+  fifo:{no:1,m:'FIFO',title:'Klebstoff für die Klebemaschine',l:'Einlagern →',c:'',r:'→ Entnahme',rack:'flow',unit:'Palette',
+    show:['wk','mhd'],
+    init:[P('P1',30,38),P('P2',31,39),P('P3',32,40)],
+    weeks:[{wk:33,ev:[{t:'in',item:P('P4',33,35)},{t:'out'}]},{wk:34,ev:[{t:'out'}]},{wk:35,ev:[{t:'out'}]},{wk:36,ev:[{t:'out'}]}],
+    inText:'Sie kommt hinten ins Regal und rollt nach vorn.',outText:'Die Maschine braucht Klebstoff.'},
+  lifo:{no:2,m:'LIFO',title:'Klebstoff im Einfahrregal',l:'Rückwand',c:'',r:'⇄ rein und raus',rack:'wall',unit:'Palette',
+    show:['wk','mhd'],
+    init:[P('P1',30,38),P('P2',31,39),P('P3',32,40)],
+    weeks:[33,34,35,36,37,38,39].map((w,i)=>({wk:w,ev:[{t:'out'},{t:'in',item:P('P'+(4+i),w,w+8)}]})),
+    inText:'Der Stapler stellt sie vorne in die Gasse.',outText:'Die Maschine braucht Klebstoff.'},
+  hifo:{no:3,m:'HIFO',title:'Was ist das Lager wert?',l:'',c:'Rollenlager',r:'',rack:'',unit:'Rolle',roll:true,
+    show:['wk','price'],
+    init:[P('A',30,99,400),P('B',32,99,520),P('C',34,99,460)],
+    weeks:[{wk:35,ev:[{t:'out'}]},{wk:36,ev:[{t:'in',item:P('D',36,99,480)},{t:'out'}]},{wk:37,ev:[{t:'in',item:P('E',37,99,500)},{t:'out'}]},{wk:38,ev:[{t:'in',item:P('F',38,99,530)},{t:'out'}]}],
+    inText:'Sie kommt auf einen freien Platz.',outText:'Eine Rolle wird verbraucht.'},
+  fefo:{no:4,m:'FEFO',title:'UV-Lack mit Ablaufdatum',l:'',c:'Palettenregal: jedes Fach erreichbar',r:'',rack:'',unit:'Palette',
+    show:['mhd','wk'],
+    init:[P('P1',30,40),P('P2',31,33),P('P3',32,41)],
+    weeks:[{wk:33,ev:[{t:'out'}]},{wk:34,ev:[{t:'in',item:P('P4',34,36)},{t:'out'}]},{wk:35,ev:[{t:'out'}]},{wk:36,ev:[{t:'out'}]}],
+    inText:'Sie kommt in ein freies Fach.',outText:'Die Lackiermaschine braucht Lack.'}
+};
+const ORDER=['fifo','lifo','hifo','fefo'];
+
+/* ---------- Glossar: einfache Sprache, immer mit Beispiel ---------- */
+const GL={
+  KW:{t:'KW',full:'Kalenderwoche',p:'Das Jahr hat 52 Wochen. Sie werden durchgezählt: KW 1 ist Anfang Januar, KW 52 ist Ende Dezember. Im Betrieb plant man oft mit Wochen statt mit Tagen.',ex:'KW 33 kommt direkt nach KW 32. KW 33 ist ungefähr Mitte August.'},
+  MHD:{t:'MHD',full:'Mindesthaltbarkeitsdatum',p:'Bis zu dieser Woche ist die Ware sicher gut. Danach kann zum Beispiel Klebstoff schlecht kleben. Im Betrieb wird abgelaufene Ware nicht mehr verwendet.',ex:'MHD KW 35 heißt: In KW 35 ist die Ware noch gut. Ab KW 36 ist sie abgelaufen.'},
+  Eingang:{t:'Eingang',full:'Wareneingang',p:'Die Woche, in der die Palette ins Lager gekommen ist.',ex:'Eingang KW 30 heißt: Die Palette steht seit KW 30 im Lager.'},
+  abgelaufen:{t:'abgelaufen',full:'Das MHD ist vorbei',p:'Die Ware darf nicht mehr verwendet werden. Sie muss entsorgt werden. Das kostet den Betrieb Geld.',ex:'In der Animation werden abgelaufene Paletten rot.'},
+  Durchlaufregal:{t:'Durchlaufregal',full:'Regal mit schrägen Rollenbahnen',p:'Die Paletten stehen auf Rollen. Die Bahn ist leicht schräg. Hinten wird eingelagert, die Paletten rollen von selbst nach vorn. Vorne wird entnommen.',ex:'Links im Bild: Einlagern. Rechts im Bild: Entnahme.'},
+  Einfahrregal:{t:'Einfahrregal',full:'Regal mit Gasse und Rückwand',p:'Der Stapler fährt in eine Gasse hinein. Hinten ist eine Wand. Darum kommt man nur von vorne an die Paletten.',ex:'Links im Bild ist die Rückwand. Rein und raus geht es nur rechts.'},
+  Palettenregal:{t:'Palettenregal',full:'Regal mit einzelnen Fächern',p:'Jede Palette hat ihr eigenes Fach. Man kommt an jede Palette direkt heran, egal wo sie steht.',ex:'Thomas kann jede der Paletten holen, nicht nur die vorderste.'},
+  Preis:{t:'Preis',full:'Einkaufspreis',p:'So viel Geld hat der Betrieb für die Rolle bezahlt. Der Preis für Aluminium schwankt, darum kostet jede Rolle etwas anderes.',ex:'Rolle B hat 520 € gekostet.'},
+  Wert:{t:'Wert im Lager',full:'Lagerwert',p:'Man zählt die Einkaufspreise aller Rollen zusammen, die noch im Lager liegen. So viel Geld steckt im Lager.',ex:'Rolle A (400 €) + Rolle C (460 €) = 860 €.'},
+  verbraucht:{t:'verbraucht',full:'Was gilt als verbraucht?',p:'Die Rollen sind alle gleich. Die Buchhaltung legt mit einer Regel fest, welche Rolle sie als verbraucht rechnet. Mit diesem Preis rechnet sie weiter.',ex:'Bei HIFO rechnet sie mit der teuersten Rolle.'}
+};
+const TERMS={fifo:['KW','Eingang','MHD','abgelaufen','Durchlaufregal'],lifo:['KW','Eingang','MHD','abgelaufen','Einfahrregal'],
+  hifo:['KW','Eingang','Preis','Wert','verbraucht'],fefo:['KW','MHD','Eingang','abgelaufen','Palettenregal'],vergleich:['KW','MHD','abgelaufen','Wert']};
+function termsHTML(key){return '<div class="terms"><span>Wörter erklärt:</span>'+TERMS[key].map(k=>'<button class="term" data-g="'+k+'">'+GL[k].t+'</button>').join('')+'</div>'}
+let lastFocus=null;
+function openGloss(k){const g=GL[k];if(!g)return;closeGloss();lastFocus=document.activeElement;
+  const s=document.createElement('div');s.className='sheet';s.id='sheet';s.setAttribute('role','dialog');s.setAttribute('aria-modal','true');s.setAttribute('aria-labelledby','gl-h');
+  s.innerHTML='<div class="card"><h2 id="gl-h">'+g.t+'<small>'+g.full+'</small></h2><p>'+g.p+'</p><p class="ex"><b>Beispiel:</b> '+g.ex+'</p><button class="btn go" id="gl-ok">Verstanden</button></div>';
+  s.addEventListener('click',e=>{if(e.target===s)closeGloss()});document.body.appendChild(s);document.getElementById('gl-ok').onclick=closeGloss;document.getElementById('gl-ok').focus()}
+function closeGloss(){const s=document.getElementById('sheet');if(s){s.remove();if(lastFocus&&lastFocus.focus)lastFocus.focus()}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeGloss()});
+document.addEventListener('click',e=>{const b=e.target.closest('.term');if(b)openGloss(b.dataset.g)});
+
+/* ---------- Lager-Logik ---------- */
+class Store{
+  constructor(rack,key,opts){this.rack=rack;this.key=key;this.d=ST[key];this.opts=opts||{};this.els=new Map();this.reset()}
+  free(){return this.key==='hifo'||this.key==='fefo'}
+  reset(){
+    this.els.forEach(e=>e.remove());this.els.clear();
+    this.stock=[];this.out=[];this.log=[];this.wi=0;this.week=this.opts.startWeek||null;
+    (this.opts.init||this.d.init).forEach((p,i)=>this.stock.push({...p,slot:i}));
+    this.render(true);
+  }
+  weeks(){return this.opts.weeks||this.d.weeks}
+  pick(){const s=this.stock;if(!s.length)return -1;
+    if(this.key==='fifo')return 0; if(this.key==='lifo')return s.length-1;
+    let b=0;s.forEach((p,i)=>{if(this.key==='hifo'?p.price>s[b].price:p.mhd<s[b].mhd)b=i});return b}
+  isDead(p,wk){return wk>p.mhd}
+  value(){return this.stock.reduce((t,p)=>t+(p.price||0),0)}
+  doIn(item){const used=new Set(this.stock.map(p=>p.slot));let slot=0;while(used.has(slot))slot++;
+    this.stock.push({...item,slot});return item}
+  doOut(){const i=this.pick();if(i<0)return null;const[p]=this.stock.splice(i,1);p.dead=this.isDead(p,this.week);this.out.push(p);return p}
+  done(){return this.wi>=this.weeks().length}
+  slotOf(p,i){return this.key==='fifo'?N-1-i:this.key==='lifo'?i:p.slot}
+  label(p){const sh=this.d.show,lines=sh.map(k=>k==='wk'?'Eingang<b>KW '+p.wk+'</b>':k==='mhd'?'MHD<b>KW '+p.mhd+'</b>':'Preis<b>'+p.price+' €</b>');
+    return '<span class="id">'+p.id+'</span><span class="ln">'+lines.join('<br>')+'</span>'}
+  render(instant){
+    const live=new Set(this.stock.map(p=>p.id)),free=this.free();
+    this.els.forEach((el,id)=>{if(!live.has(id)){
+      if(free)el.style.setProperty('--y','160%');else el.style.setProperty('--s',N+0.4);
+      el.classList.add('gone');el.classList.remove('next');this.els.delete(id);setTimeout(()=>el.remove(),750)}});
+    const nx=this.done()?-1:this.pick();
+    this.stock.forEach((p,i)=>{let el=this.els.get(p.id);
+      if(!el){el=document.createElement('div');el.className='pallet'+(this.d.roll?' roll':'');
+        el.innerHTML='<div class="load">'+this.label(p)+'</div><div class="base"></div>';
+        if(!instant){
+          if(this.key==='fifo')el.style.setProperty('--s',-1.4);
+          else if(this.key==='lifo')el.style.setProperty('--s',N+0.3);
+          else{el.style.setProperty('--s',p.slot);el.style.setProperty('--y','-170%')}
+        }
+        this.rack.appendChild(el);this.els.set(p.id,el);el.getBoundingClientRect()}
+      el.style.setProperty('--s',this.slotOf(p,i));el.style.setProperty('--y','0');
+      el.classList.toggle('dead',this.week!=null&&this.isDead(p,this.week));
+      el.classList.toggle('next',i===nx)});
+    if(this.opts.onRender)this.opts.onRender(this);
+  }
+  /* eine Woche ausführen; ruft cb(zeilen) nach jedem Ereignis */
+  runWeek(onLine,onEnd){
+    const W=this.weeks()[this.wi];if(!W){onEnd&&onEnd();return}
+    this.week=W.wk;const lines=[];
+    const deadBefore=new Set(this.stock.filter(p=>this.isDead(p,W.wk-1)).map(p=>p.id));
+    let k=0;const next=()=>{
+      if(k>=W.ev.length){
+        this.stock.forEach(p=>{if(this.isDead(p,W.wk)&&!deadBefore.has(p.id))lines.push({t:p.id+' ist jetzt abgelaufen!',bad:true})});
+        this.wi++;this.render();onLine&&onLine(lines,true);onEnd&&onEnd();return}
+      const e=W.ev[k++];
+      if(e.t==='in'){this.doIn(e.item);lines.push({t:'Neue '+this.d.unit+' '+e.item.id+' kommt an. '+this.d.inText})}
+      else{const p=this.doOut();if(p){
+        if(this.key==='hifo')lines.push({t:this.d.outText+' Als verbraucht gilt: Rolle '+p.id+' ('+p.price+' €).'});
+        else lines.push({t:this.d.outText+' Es geht raus: '+p.id+'.'});
+        if(p.dead)lines.push({t:'Achtung: '+p.id+' ist abgelaufen (MHD KW '+p.mhd+')! Muss entsorgt werden.',bad:true});
+      }}
+      this.render();onLine&&onLine(lines,false);
+      setTimeout(next,reduce?0:DELAY);
+    };next();
+  }
+}
+
+/* ---------- Ansichten ---------- */
+const app=document.getElementById('app');let busy=false,auto=null;
+function rackHTML(key,id){const d=ST[key];let lines='';for(let i=1;i<N;i++)lines+='<div class="slotline" style="left:'+(i*100/N)+'%"></div>';
+  return '<div class="stage"><span class="zone l">'+d.l+'</span><span class="zone c">'+d.c+'</span><span class="zone r">'+d.r+'</span><div class="rack '+d.rack+'" id="'+id+'">'+lines+'</div></div>'}
+
+function viewMenu(){
+  app.innerHTML='<header style="display:grid;gap:6px"><span class="eyebrow">MAF / PT – Fe · LF 07</span><h1>Lagerprinzipien</h1><p style="margin:0;color:var(--muted)">Tippe auf deine Station.</p></header>'+
+  '<nav class="menu">'+ORDER.map(k=>'<a href="#'+k+'"><span class="no">'+ST[k].no+'</span><span><b>'+ST[k].m+'</b><span>'+ST[k].title+'</span></span></a>').join('')+
+  '<a href="#vergleich"><span class="no">5</span><span><b>Vergleich</b><span>Alle vier Prinzipien gleichzeitig</span></span></a></nav>';
+}
+
+function viewStation(key){
+  const d=ST[key];
+  app.innerHTML='<a class="back" href="#">← alle Stationen</a>'+
+    '<header style="display:grid;gap:2px"><span class="eyebrow">Station '+d.no+' · '+d.m+'</span><h1>'+d.title+'</h1></header>'+
+    '<ol class="howto"><li>Tippe auf „Nächste Woche“</li><li>Lies, was passiert</li><li>Schau, welche '+d.unit+' rausgeht</li></ol>'+
+    '<div class="now"><div class="week"><small>Woche</small><span id="wk">–</span></div><div class="msg" id="msg" aria-live="polite">So sieht es am Anfang aus. Gelb umrandet = geht als Nächstes raus.</div></div>'+
+    rackHTML(key,'rack')+
+    '<div class="legend"><span><i style="background:var(--signal)"></i>geht als Nächstes raus</span>'+(key==='hifo'?'':'<span><i style="background:var(--danger)"></i>abgelaufen</span>')+'</div>'+
+    '<div class="controls"><button class="btn go" id="go">Nächste Woche ▶</button><button class="btn" id="again" aria-label="Von vorn">↺</button></div>'+
+    '<div class="facts" id="facts"></div>'+termsHTML(key)+
+    '<div class="log"><h2>Was ist passiert?</h2><ol id="log"><li class="empty">Noch nichts. Tippe auf „Nächste Woche“.</li></ol></div>';
+  const $=id=>document.getElementById(id);
+  const st=new Store($('rack'),key,{onRender(s){
+    const f=[];
+    if(key==='hifo')f.push('<span class="fact">Wert im Lager:<b>'+s.value()+' €</b></span>');
+    else{const dead=s.out.filter(p=>p.dead).length+s.stock.filter(p=>s.week!=null&&s.isDead(p,s.week)).length;
+      f.push('<span class="fact">Abgelaufen:<b'+(dead?' class="bad"':'')+'>'+dead+'</b></span>')}
+    $('facts').innerHTML=f.join('');
+    $('wk').textContent=s.week==null?'–':s.week;
+  }});
+  function logLines(lines,wk){const ol=$('log');if(ol.querySelector('.empty'))ol.innerHTML='';
+    lines.forEach(l=>{const li=document.createElement('li');if(l.bad)li.className='bad';li.innerHTML='<span class="w">KW '+wk+'</span>'+l.t;ol.appendChild(li)})}
+  $('go').onclick=()=>{if(busy||st.done())return;busy=true;$('go').disabled=true;const wk=st.weeks()[st.wi].wk;let shown=0;
+    st.runWeek((lines,final)=>{$('msg').innerHTML=lines.map(l=>'<span'+(l.bad?' class="bad"':'')+'>'+l.t+'</span>').join('');
+        if(final){logLines(lines.slice(shown),wk)}else{logLines(lines.slice(shown),wk);shown=lines.length}},
+      ()=>{busy=false;
+        if(st.done()){$('go').disabled=true;$('go').textContent='Fertig';
+          const e=document.createElement('div');e.className='end';e.id='end';e.textContent='Ende der Animation. Bearbeite jetzt die Aufgaben auf deinem Blatt. Mit ↺ kannst du alles noch einmal ansehen.';$('log').parentNode.after(e)}
+        else $('go').disabled=false});
+  };
+  $('again').onclick=()=>{if(busy)return;st.reset();$('go').disabled=false;$('go').textContent='Nächste Woche ▶';
+    $('msg').textContent='So sieht es am Anfang aus. Gelb umrandet = geht als Nächstes raus.';
+    $('log').innerHTML='<li class="empty">Noch nichts. Tippe auf „Nächste Woche“.</li>';const e=$('end');if(e)e.remove()};
+}
+
+/* Vergleich: gleicher Plan für alle vier */
+const C_PRICES=[118,124,131,127,139,145,142,151,148,156,161,158];
+const C_SHELF=[8,6,9,3,7,6,8,4,7,6,8,5];
+const C_PLAN='EEEAEAEAEAEAEAEA';
+function compareWeeks(){let n=0;return C_PLAN.split('').map((c,i)=>{const wk=30+i;
+  if(c==='E'){const it=P('P'+(n+1),wk,wk+C_SHELF[n],C_PRICES[n]);n++;return{wk,ev:[{t:'in',item:it}]}}
+  return{wk,ev:[{t:'out'}]}})}
+function viewCompare(){
+  app.innerHTML='<a class="back" href="#">← alle Stationen</a>'+
+    '<header style="display:grid;gap:2px"><span class="eyebrow">Station 5 · Vergleich</span><h1>Alle vier im Vergleich</h1></header>'+
+    '<p style="margin:0">Gleiche Lieferungen, gleiche Wochen. Nur das Lagerprinzip ist anders.</p>'+
+    '<div class="now"><div class="week"><small>Woche</small><span id="wk">–</span></div><div class="msg" id="msg">Tippe auf „Alles abspielen“ und schau zu.</div></div>'+
+    '<div class="controls"><button class="btn go" id="play">Alles abspielen ▶</button><button class="btn" id="again" aria-label="Von vorn">↺</button></div>'+
+    ORDER.map(k=>'<div class="mrow mini"><div class="mhead"><b>'+ST[k].m+'</b><span id="ms-'+k+'"></span></div>'+rackHTML(k,'r-'+k)+'</div>').join('')+
+    '<div class="legend"><span><i style="background:var(--danger)"></i>abgelaufen</span></div>'+termsHTML('vergleich')+
+    '<div class="log"><h2>Ergebnis</h2><div class="tablebox"><table><thead><tr><th>Prinzip</th><th>Abgelaufene Paletten</th><th>Älteste Palette im Lager</th><th>Wert im Lager</th></tr></thead><tbody id="res"></tbody></table></div></div>';
+  const $=id=>document.getElementById(id);
+  const stats=s=>{const dead=s.out.filter(p=>p.dead).length+s.stock.filter(p=>s.week!=null&&s.isDead(p,s.week)).length;
+    const old=s.stock.length?Math.min(...s.stock.map(p=>p.wk)):null;return{dead,old,val:s.value()}};
+  const stores=ORDER.map(k=>new Store($('r-'+k),k,{init:[],weeks:compareWeeks(),onRender(s){const r=stats(s);const e=$('ms-'+k);
+    e.textContent='abgelaufen: '+r.dead;e.className=r.dead?'bad':''}}));
+  stores.forEach(s=>{s.d={...ST[s.key],show:['wk'],roll:false}});
+  function table(){const done=stores[0].done();
+    $('res').innerHTML=stores.map(s=>{const r=stats(s);return '<tr><td>'+ST[s.key].m+'</td>'+(done?'<td>'+r.dead+'</td><td>'+(r.old?'Eingang KW '+r.old:'–')+'</td><td>'+r.val+' €</td>':'<td colspan="3" style="color:var(--muted)">erst am Ende</td>')+'</tr>'}).join('')}
+  table();
+  function step(){if(stores[0].done()){stop();return}
+    const wk=stores[0].weeks()[stores[0].wi].wk;let left=stores.length;
+    stores.forEach(s=>s.runWeek(null,()=>{if(--left===0){$('wk').textContent=wk;table();
+      if(stores[0].done()){stop();$('msg').textContent='Fertig! Übertrage das Ergebnis auf dein Blatt.'}}}));
+  }
+  function stop(){clearInterval(auto);auto=null;$('play').textContent=stores[0].done()?'Fertig':'Alles abspielen ▶';$('play').disabled=stores[0].done()}
+  $('play').onclick=()=>{if(auto){stop();return}$('play').textContent='❚❚ Pause';$('msg').textContent='Läuft … Achte auf die roten Paletten.';step();auto=setInterval(step,reduce?150:1300)};
+  $('again').onclick=()=>{stop();stores.forEach(s=>s.reset());$('wk').textContent='–';$('play').disabled=false;$('play').textContent='Alles abspielen ▶';$('msg').textContent='Tippe auf „Alles abspielen“ und schau zu.';table()};
+}
+
+function route(){clearInterval(auto);auto=null;busy=false;const h=(location.hash||'').replace('#','').toLowerCase();
+  if(ST[h])viewStation(h);else if(h==='vergleich')viewCompare();else viewMenu();window.scrollTo(0,0)}
+window.addEventListener('hashchange',route);route();
+})();
+</script>
